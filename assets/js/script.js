@@ -1,4 +1,4 @@
-let pressedBtn = false; // initialement bouton n'est pas appuyé.
+let pressedBtn = false;
 let messageIndex = -1;
 let isTyping = false;  
 let typeWriterInterval;
@@ -66,7 +66,7 @@ const pressNextButton = () => {
     pressedBtn = true;
 };
     
-    // Pour setTimeout bouton
+    // --> Pour setTimeout bouton
 const resetUiButton = () =>{
     ui.nextButton.classList.remove('pressBtn');
     ui.nextButton.src = 'assets/img/ui/default_button.png';
@@ -92,13 +92,12 @@ const showNextDialog = () => {
 
         ui.wMessage.classList.remove('d-none');
 
-        // affichage ou non du nom
+        // affichage nom présent?
         if (ui.wName.classList.contains('d-none') && scene[messageIndex]?.name)
             ui.wName.classList.remove('d-none');
         else if (!(ui.wName.classList.contains('d-none')) && scene[messageIndex]?.name == null)
             ui.wName.classList.add('d-none');
         ;
-        // ?. => seulement s'il existe l'indice en question dans 'scene'
 
         ui.characterName.innerHTML = scene[messageIndex]?.name;
 
