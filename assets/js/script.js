@@ -35,7 +35,7 @@ const scene = [{
     character : 'tektiv',
     name : 'Tektiv',
     expression : 'pumped',
-    message : 'Bonjour je suis ${red}Tektiv${/}, je recherche une alternance!',
+    message : '${!}Bonjour je suis ${red}Tektiv${/}, je recherche une alternance!',
     voice : audios.male,
 }, {
     character : 'tektiv',
@@ -47,15 +47,26 @@ const scene = [{
     character : 'maya',
     name : 'Maya',
     expression : 'surprised',
-    message : "<strong>Quoi!? C'est impossible!</strong>",
+    message : "<strong>Quoi!? ${!}C'est impossible!</strong>",
     voice : audios.female,
 }, {
     character : 'maya',
     name : 'Maya',
     expression : 'worried',
-    message : "Tu mérites d'en avoir au moins 100.",
+    message : "Tu mérites d'en avoir au moins ${?} 100.",
+    voice : audios.female,
+}, {
+    character : 'maya',
+    name : 'Wright',
+    expression : 'sad',
+    message : "${blue}( Il n'a pas l'air d'avoir la pêche le pauvre...)",
     voice : audios.female,
 }]
+
+const numberOfEffects = {
+    alert : 0,
+    shake : 0
+};
 
 const pressNextButton = () => {
     ui.nextButton.classList.add('pressBtn');
@@ -66,7 +77,7 @@ const pressNextButton = () => {
     pressedBtn = true;
 };
     
-    // --> Pour setTimeout bouton
+    // Pour setTimeout bouton
 const resetUiButton = () =>{
     ui.nextButton.classList.remove('pressBtn');
     ui.nextButton.src = 'assets/img/ui/default_button.png';
@@ -74,8 +85,8 @@ const resetUiButton = () =>{
     pressedBtn = false;
 };
 
-//set character sprite and expression
-const setCharacter = (character, expression, mode = 'silent') => {
+const setCharacter = (character, expression, isTalking = 0) => {
+    const mode = isTalking? 'talking' : 'silent';
     ui.character.src = `./assets/img/sprites/${character}/${mode}/${expression}.gif`
 };
 
@@ -92,18 +103,49 @@ const showNextDialog = () => {
 
         ui.wMessage.classList.remove('d-none');
 
-        // affichage nom présent?
         if (ui.wName.classList.contains('d-none') && scene[messageIndex]?.name)
             ui.wName.classList.remove('d-none');
         else if (!(ui.wName.classList.contains('d-none')) && scene[messageIndex]?.name == null)
             ui.wName.classList.add('d-none');
         ;
+        // ?. => seulement s'il existe l'indice en question dans 'scene'
 
         ui.characterName.innerHTML = scene[messageIndex]?.name;
 
-        const currentScene = scene[messageIndex];
-        typeWriter(currentScene);
+        if (messageIndex >= 0) {
+            numberOfEffects.alert = scene[messageIndex].message.split ('${?}').length - 1;
+            numberOfEffects.shake = scene[messageIndex].message.split ('${!}').length - 1;
         }
+
+        typeWriter(scene[messageIndex]);
+        }
+}
+
+const nextCharactersAreEffects = (str, index) => {
+    return str.substring(index, index + 4) === '${!}' 
+        || str.substring(index, index + 4) === '${?}';
+};
+
+const getEffect = (str, index) => {
+    const substring = str.substring(index, index + 4);
+    if (substring === '${!}') return 'shake';
+    if (substring === '${?}') return 'alert';
+    return null;
+}
+
+const handleEffect = (effect) => {
+    if (numberOfEffects[effect] <= 0) return;
+    numberOfEffects[effect]--;
+
+    audios[effect].currentTime = 0;
+    audios[effect].volume = 0.05;
+    audios[effect].play();
+
+    const element = effect === 'alert' ? ui.characterbox : ui.bg;
+    element.classList.add(effect);
+    setTimeout(() => {
+        element.classList.remove(effect) 
+    }, 500);
 }
 
 const typeWriter = (currentScene) => {
@@ -114,8 +156,9 @@ const typeWriter = (currentScene) => {
         clearInterval(typeWriterInterval);
     ;
     isTyping = true;
-
-    setCharacter(currentScene.character, currentScene.expression, 'talking');
+    
+    const isTalking = currentScene.name.toLowerCase() === currentScene.character;
+    setCharacter(currentScene.character, currentScene.expression, isTalking);
 
     currentScene.message = currentScene.message
         .replace(/\$\{(red|green|blue)\}/g, '<span class="$1">')
@@ -125,6 +168,12 @@ const typeWriter = (currentScene) => {
 
     typeWriterInterval = setInterval(() => {
         if (index < message.length) {
+
+            if (nextCharactersAreEffects(message, index)) {
+                const effect = getEffect(message, index);
+                handleEffect(effect);
+                index = index + 4;
+            }
 
             if (message[index] === '<') {
                 const closingTagIndex = message.indexOf('>', index);
@@ -148,7 +197,7 @@ const typeWriter = (currentScene) => {
             }
         }else{
             clearInterval(typeWriterInterval);
-            setCharacter(currentScene.character, currentScene.expression, 'silent');
+            setCharacter(currentScene.character, currentScene.expression, 0);
             isTyping = false;
         }
     }, 40);
@@ -156,8 +205,17 @@ const typeWriter = (currentScene) => {
 
 const dispalyFullMessage = () => {
     const currentScene = scene[messageIndex];
-    ui.dialog.innerHTML = currentScene.message;
-    setCharacter(currentScene.character, currentScene.expression, 'silent');
+    const message = currentScene.message?.trim()?.replace(/\$\{[?!]\}/g, ''); // [!?]=> ! ou ?
+
+    if (currentScene.message.includes('${?}')) {
+        handleEffect('alert');
+    }else if (currentScene.message.includes('${!}')) {
+        handleEffect('shake');
+    }
+
+
+    ui.dialog.innerHTML = message;
+    setCharacter(currentScene.character, currentScene.expression, 0);
 }
 
 ui.nextbox.addEventListener('click', () => {
@@ -165,7 +223,7 @@ ui.nextbox.addEventListener('click', () => {
     //si le bouton est activé, alors on ne fait rien (anti-spam)
     if (pressedBtn) return;
     
-    if (audios.bgm.paused) { //audio background
+    if (audios.bgm.paused) {
         audios.bgm.loop = true;
         audios.bgm.volume = 0.2;
         audios.bgm.play();
