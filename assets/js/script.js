@@ -33,13 +33,13 @@ const audios = {
 
 const scene = [{
     character : 'tektiv',
-    name : 'Tektiv',
+    name : 'Floris',
     expression : 'pumped',
-    message : '${!}Bonjour je suis ${red}Tektiv${/}, je recherche une alternance!',
+    message : '${!}Bonjour je suis ${red}Floris${/}, je recherche une alternance!',
     voice : audios.male,
 }, {
     character : 'tektiv',
-    name : 'Tektiv',
+    name : 'Floris',
     expression : 'mad',
     message : "Je n'en ai toujours pas trouvé, c'est inadmissible.",
     voice : audios.male,
@@ -74,6 +74,7 @@ const pressNextButton = () => {
     ui.arrow.classList.add('d-none');
     audios.next.currentTime = 0;
     audios.next.play();
+    audios.next.volume = 0.05;
     pressedBtn = true;
 };
     
@@ -138,7 +139,7 @@ const handleEffect = (effect) => {
     numberOfEffects[effect]--;
 
     audios[effect].currentTime = 0;
-    audios[effect].volume = 0.05;
+    audios[effect].volume = 0.06;
     audios[effect].play();
 
     const element = effect === 'alert' ? ui.characterbox : ui.bg;
@@ -193,7 +194,7 @@ const typeWriter = (currentScene) => {
             if (index % 2 ===0) {
                 currentScene.voice.currentTime = 0;
                 currentScene.voice.play();
-                currentScene.voice.volume = 0.05;
+                currentScene.voice.volume = 0.02;
             }
         }else{
             clearInterval(typeWriterInterval);
@@ -225,7 +226,7 @@ ui.nextbox.addEventListener('click', () => {
     
     if (audios.bgm.paused) {
         audios.bgm.loop = true;
-        audios.bgm.volume = 0.2;
+        audios.bgm.volume = 0.05;
         audios.bgm.play();
     };
 
